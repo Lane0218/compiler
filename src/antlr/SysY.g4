@@ -13,85 +13,69 @@ fragment HexPrefix: '0' [xX];
 fragment NonZeroDecDigit: [1-9];
 fragment ESC: '\\"' | '\\\\';
 
-fragment NonDigit: [a-zA-Z];
+fragment NonDigit: '_' | [a-zA-Z];
 
 fragment DecInteger: NonZeroDecDigit DecDigit*;
 fragment OctInteger: OctPrefix OctDigit*;
 fragment HexInteger: HexPrefix HexDigit+;
 
-fragment DecFraction:
-    (DecInteger)? '.' DecDigit+
-    | DecInteger '.';
-fragment DecExponent: ('e' | 'E') ('+' | '-')? DecInteger;
+fragment DecFraction: (DecInteger)? '.' DecInteger | DecInteger '.';
+fragment DecExponent: ('e'|'E') ('+'|'-')? DecInteger;
+fragment DecFloat: DecFraction (DecExponent)? | DecInteger DecExponent;
 
-fragment HexFraction:
-    HexDigit* '.' HexDigit+
-    | HexDigit+ '.';
-fragment BinExponent: ('p' | 'P') ('+' | '-')? HexDigit+;
-
-fragment DecFloat:
-    DecFraction (DecExponent)?
-    | DecInteger DecExponent;
-
-fragment HexFloat:
-    HexPrefix HexFraction BinExponent
-    | HexPrefix HexDigit+ BinExponent;
+fragment HexFraction: HexDigit* '.' HexDigit+ | HexDigit+ '.';
+fragment BinExponent: ('p'|'P') ('+'|'-')? HexDigit+;
+fragment HexFloat: HexPrefix HexFraction BinExponent | HexInteger BinExponent;
 
 // keywords
-CONST : 'const' ;
-VOID : 'void' ;
 INT: 'int';
-FLOAT : 'float' ;
-IF : 'if' ;
-ELSE : 'else' ;
-WHILE : 'while' ;
-BREAK : 'break' ;
-CONTINUE : 'continue' ;
-RETURN : 'return' ;
+FLOAT: 'float';
+CONST: 'const';
+VOID: 'void';
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+BREAK: 'break';
+CONTINUE: 'continue';
+RETURN: 'return';
 
 // operators
-SUB : '-' ;
-BANG : '!' ;
-MUL : '*' ;
-DIV : '/' ;
-MOD : '%' ;
-LT : '<' ;
-GT : '>' ;
-LE : '<=' ;
-GE : '>=' ;
-EQUAL_EQUAL : '==' ;
-NOT_EQUAL : '!=' ;
-AND : '&&' ;
-OR : '||' ;
 ADD: '+';
+SUB: '-';
+MUL: '*';
+DIV: '/';
+MOD: '%';
+EQ: '==';
+GT: '>';
+GE: '>=';
+LT: '<';
+LE: '<=';
+NE: '!=';
+NOT: '!';
+AND: '&&';
+OR: '||';
 
 // punctuations
-COMMA: ',' ;
-SEMI : ';' ;
-LBRACK : '[' ;
-RBRACK : ']' ;
-ASSIGN : '=' ;
-LBRACE : '{' ;
-RBRACE : '}' ;
-LPAREN : '(' ;
-RPAREN : ')' ;
+COMMA: ',';
+SEMI: ';';
+LBRACK: '[';
+RBRACK: ']';
+ASSIGN: '=';
+LBRACE: '{';
+RBRACE: '}';
+LPAREN: '(';
+RPAREN: ')';
 
 // identifier
-IDENT: NonDigit (NonDigit | DecDigit)*;
+IDENT: NonDigit (DecDigit | NonDigit)*;
+
 
 // literals
-INTEGER:
-    DecInteger
-    | OctInteger
-    | HexInteger;
+ILITERAL: DecInteger|OctInteger|HexInteger;
+FLITERAL: DecFloat| HexFloat;
+//INTEGER: DecInteger|OctInteger|HexInteger;
+//FLOATING: DecFloat| HexFloat;
 
-FLOATING:
-    DecFloat
-    | HexFloat;
-
-DECIMAL_FLOAT_CONST:
-    (NonZeroDecDigit DecDigit*)? '.' DecDigit+ ('e' ('+' | '-')? DecDigit+)?;
-HEXADECIMAL_FLOAT_CONST: HexPrefix HexDigit+ '.' HexDigit+ ('e' ('+' | '-')? HexDigit+)?;
 
 // string
 STRING: '"' (ESC | .)*? '"';
@@ -104,6 +88,7 @@ BLOCKCOMMENT: '/*' .*? '*/' -> skip;
 /*===-------------------------------------------===*/
 /* Syntax rules                                    */
 /*===-------------------------------------------===*/
+
 module: compUnit EOF;
 compUnit: (decl | funcDef)+;
 decl: constDecl | varDecl;
@@ -145,13 +130,15 @@ primaryExp:
     '(' exp ')'
     | lVal
     | number;
-number: INTEGER | FLOATING;
+number: ILITERAL | FLITERAL;
+//number: INTEGER | FLOATING;
 unaryExp:
     primaryExp
     | IDENT '(' funcRParams ')'
     | unaryOp unaryExp;
 unaryOp: '+' | '-' | '!';
-funcRParams: exp (',' exp)*;
+funcRParams: funcRParam (',' funcRParam)*;
+funcRParam: exp;
 mulExp:
     unaryExp
     | mulExp ('*' | '/' | '%') unaryExp;
